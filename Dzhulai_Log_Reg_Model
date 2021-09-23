@@ -1,0 +1,114 @@
+import numpy as np
+import pandas as pd
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from sklearn import preprocessing
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_auc_score
+from sklearn import metrics
+
+# Load a data
+df = pd.read_csv("train.csv", header=0, low_memory=False, skipinitialspace=True, na_filter=False)
+
+# Getting rid from NaN and whitespaces
+nan_value = float("NaN")
+df.replace("", nan_value, inplace=True)
+df.replace(" ", nan_value, inplace=True)
+
+df = df.fillna({"Age": "0"})
+df["Age"] = df["Age"].astype(float)
+df["Age"] = df["Age"].astype(int)
+
+df = df.fillna({"Fare": "0"})
+df["Fare"] = df["Fare"].astype(float)
+df["Fare"] = df["Fare"].astype(int)
+
+obj_df = df.select_dtypes(include=['object']).copy()
+obj_df.head()
+obj_df[obj_df.isnull().any(axis=1)]
+obj_df["Cabin"].value_counts()
+obj_df = obj_df.fillna({"Cabin": "N"})
+
+obj_df[['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked']] = obj_df[['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked']].astype('category')
+
+obj_df["Name_cat"] = obj_df["Name"].cat.codes
+obj_df["Sex_cat"] = obj_df["Sex"].cat.codes
+obj_df["Ticket_cat"] = obj_df["Ticket"].cat.codes
+obj_df["Cabin_cat"] = obj_df["Cabin"].cat.codes
+obj_df["Embarked_cat"] = obj_df["Embarked"].cat.codes
+
+obj_df_2 = df.drop(labels=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1)
+obj_df_3 = obj_df.drop(labels=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1)
+
+df_2 = pd.concat([obj_df_2, obj_df_3], axis=1)
+
+df_2_X = df_2.drop(labels=['Survived'], axis=1)
+
+X = df_2_X.loc[:, :]
+y = df_2.loc[:, 'Survived']
+
+# Split the data
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# Feature Scaling
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_valid = sc.transform(X_valid)
+
+# Train the model
+lr_model = LogisticRegression()
+lr_model.fit(X_train, y_train)
+
+# Prediction on test data
+y_train_pred = lr_model.predict(X_train)
+y_valid_pred = lr_model.predict(X_valid)
+
+#Actual value and the predicted value
+print("AUC Train: {:.4f}\nAUC Valid: {:.4f}".format(roc_auc_score(y_train, y_train_pred), roc_auc_score(y_valid, y_valid_pred)))
+
+# Model testing
+df_test = pd.read_csv("test.csv", low_memory=False, skipinitialspace=True, na_filter=False)
+
+# Getting rid from NaN and whitespaces
+nan_value = float("NaN")
+df_test.replace("", nan_value, inplace=True)
+df_test.replace(" ", nan_value, inplace=True)
+
+df_test = df_test.fillna({"Age": "0"})
+df_test["Age"] = df_test["Age"].astype(float)
+df_test["Age"] = df_test["Age"].astype(int)
+
+df_test = df_test.fillna({"Fare": "0"})
+df_test["Fare"] = df_test["Fare"].astype(float)
+df_test["Fare"] = df_test["Fare"].astype(int)
+
+obj_df_test = df_test.select_dtypes(include=['object']).copy()
+obj_df_test[obj_df_test.isnull().any(axis=1)]
+obj_df_test["Cabin"].value_counts()
+obj_df_test = obj_df_test.fillna({"Cabin": "N"})
+
+obj_df_test[['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked']] = obj_df_test[['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked']].astype('category')
+
+obj_df_test["Name_cat"] = obj_df_test["Name"].cat.codes
+obj_df_test["Sex_cat"] = obj_df_test["Sex"].cat.codes
+obj_df_test["Ticket_cat"] = obj_df_test["Ticket"].cat.codes
+obj_df_test["Cabin_cat"] = obj_df_test["Cabin"].cat.codes
+obj_df_test["Embarked_cat"] = obj_df_test["Embarked"].cat.codes
+
+obj_df_test_2 = df_test.drop(labels=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1)
+obj_df_test_3 = obj_df_test.drop(labels=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1)
+
+df_test_2 = pd.concat([obj_df_test_2, obj_df_test_3], axis=1)
+
+X_test = df_test_2.loc[:, :]
+
+# Test the model
+df_test_2['Survived'] = lr_model.predict(X_test)
+
+df_test_2_result = df_test_2.drop(labels=['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Name_cat', 'Sex_cat', 'Ticket_cat', 'Cabin_cat', 'Embarked_cat'], axis=1)
+
+# Save result
+df_test_2_result.to_csv('Dzhulai_Titanic_Log_Reg_Result.csv', header=True, index=False, mode='a', encoding='utf-8')
