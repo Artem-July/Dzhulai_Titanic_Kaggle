@@ -1,2 +1,4 @@
-# Titanic_Kaggle_Log_Reg
-This is my solution of Titanic Machine Learning Competition on Kaggle. I used Logistic Regression in Python.
+# Titanic_Kaggle
+This is my solution of Titanic Machine Learning Competition on Kaggle.
+My first attempt was to use Logistic Regression in Python.
+My second attempt was to use XGBoost in Python. It gave a higher result.
